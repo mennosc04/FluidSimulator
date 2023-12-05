@@ -15,7 +15,17 @@ class Particle {
 
 };
 
-void print_particles(std::vector<Particle> particles);
+class ParticleManager { 
+    public:
+        std::vector<Particle> particles;
+
+        void particles_print() {
+            for(Particle p : this->particles) {
+                std::cout << "{x: " << p.x << ", y: " << p.y << ", bounce multiplier: " << p.bounce_multiplier << "}" << std::endl;
+            }
+        }
+};
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 std::vector<Particle> draw_circles(HWND hwnd, int amount_circles);
 void RepaintBackground(HWND hwnd);
@@ -55,7 +65,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    std::vector<Particle> particles;
+    ParticleManager particleManager;
 
     switch (uMsg) {
         case WM_DESTROY:
@@ -63,8 +73,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             return 1;
         case WM_PAINT:
             RepaintBackground(hwnd);
-            particles = draw_circles(hwnd, AMOUNT_PARTICLES);
-            print_particles(particles);
+            particleManager.particles = draw_circles(hwnd, AMOUNT_PARTICLES);
+            particleManager.particles_print();
+
             return 1;
         case WM_SIZE:
             InvalidateRect(hwnd, NULL, TRUE);
@@ -126,10 +137,4 @@ void RepaintBackground(HWND hwnd) {
 
     ReleaseDC(hwnd, dc);
     DeleteObject(hcolor);
-}
-
-void print_particles(std::vector<Particle> particles) {
-    for(Particle p : particles) {
-        std::cout << "{x: " << p.x << ", y: " << p.y << ", bounce multiplier: " << p.bounce_multiplier << "}" << std::endl;
-    }
 }
