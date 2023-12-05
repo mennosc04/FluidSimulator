@@ -3,28 +3,13 @@
 #include <vector>
 #include <iostream>
 
+#include "Particle.hpp"
+
 #define PARTICLE_SIZE 40
 #define PARTICLE_SPACING 2
 #define AMOUNT_PARTICLES 100
 
 const char ClassName[] = "MyWindowClass";
-
-class Particle {
-    public:
-        int x, y, bounce_multiplier;
-
-};
-
-class ParticleManager { 
-    public:
-        std::vector<Particle> particles;
-
-        void particles_print() {
-            for(Particle p : this->particles) {
-                std::cout << "{x: " << p.x << ", y: " << p.y << ", bounce multiplier: " << p.bounce_multiplier << "}" << std::endl;
-            }
-        }
-};
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 std::vector<Particle> draw_circles(HWND hwnd, int amount_circles);
