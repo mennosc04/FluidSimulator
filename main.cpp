@@ -11,9 +11,15 @@
 
 const char ClassName[] = "MyWindowClass";
 
+static BITMAPINFO BitmapInfo;
+static void *BitmapMemory;
+static HBITMAP BitmapHandle;
+static HDC DeviceContext;
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-std::vector<Particle> draw_circles(HWND hwnd, int amount_circles);
-void RepaintBackground(HWND hwnd);
+std::vector<Particle> draw_circles(HWND hwnd, HDC hdc, int amount_circles);
+void RepaintBackground(HWND hwnd, HDC hdc);
+void ResizeDIBSection(int width, int height);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow) {
     WNDCLASS WindowClass = {};
@@ -54,29 +60,37 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
     switch (uMsg) {
         case WM_DESTROY:
+        {
             PostQuitMessage(0);
-            return 1;
+            break;
+        }
         case WM_PAINT:
-            RepaintBackground(hwnd);
-            particleManager.particles = draw_circles(hwnd, AMOUNT_PARTICLES);
-            particleManager.particles_print();
+        {
+            PAINTSTRUCT ps;
+            HDC DeviceContext = BeginPaint(hwnd, &ps);
 
-            return 1;
+            RepaintBackground(hwnd, DeviceContext);
+            particleManager.particles = draw_circles(hwnd, DeviceContext, AMOUNT_PARTICLES);
+
+            EndPaint(hwnd, &ps);
+            break;
+        }
         case WM_SIZE:
-            InvalidateRect(hwnd, NULL, TRUE);
-            return 1;
+        {
+            RECT ClientRect;
+            GetClientRect(hwnd, &ClientRect);
+            ResizeDIBSection(ClientRect.right - ClientRect.left, ClientRect.bottom - ClientRect.top);
+            break;
+        }
         default:
             return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
 }
 
-std::vector<Particle> draw_circles(HWND hwnd, int amount_circles) {
+std::vector<Particle> draw_circles(HWND hwnd, HDC hdc, int amount_circles) {
     int particlesPerRow = (int)sqrt(amount_circles);
     int particlesPerCol = (amount_circles - 1) / particlesPerRow + 1;
     float spacing = PARTICLE_SIZE * 2 + PARTICLE_SPACING;
-
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(hwnd, &ps);
 
     HBRUSH hbr = CreateSolidBrush(RGB(3, 144, 254));
     SelectObject(hdc,hbr);
@@ -106,20 +120,37 @@ std::vector<Particle> draw_circles(HWND hwnd, int amount_circles) {
     }
 
     DeleteObject(hbr);
-    //EndPaint(hdc, ps);
 
     return particles;
 }
 
-void RepaintBackground(HWND hwnd) {
-    HDC dc = GetDC(hwnd);
-
+void RepaintBackground(HWND hwnd, HDC DeviceContext) {
     RECT rc;
     GetClientRect(hwnd, &rc);
 
     HBRUSH hcolor = CreateSolidBrush(RGB(255, 255, 255));
-    FillRect(dc, &rc, hcolor);
+    FillRect(DeviceContext, &rc, hcolor);
 
-    ReleaseDC(hwnd, dc);
     DeleteObject(hcolor);
+}
+
+void ResizeDIBSection(int width, int height) {
+    if(BitmapHandle) {
+        DeleteObject(BitmapHandle);
+    } 
+    
+    if(!DeviceContext)5I6KL.TR, {
+        DeviceContext = CreateCompatibleDC(0);
+    }
+
+    BITMAPINFO  BitmapInfo = {};
+    BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    BitmapInfo.bmiHeader.biWidth = width;
+    BitmapInfo.bmiHeader.biHeight = height;
+    BitmapInfo.bmiHeader.biPlanes = 1;
+    BitmapInfo.bmiHeader.biBitCount = 32;
+    BitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+    BitmapHandle = CreateDIBSection(DeviceContext, &BitmapInfo, DIB_RGB_COLORS, &BitmapMemory, 0, 0);
+
 }
